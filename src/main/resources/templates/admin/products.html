@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Management</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: var(--surface-color); padding: 2rem 1rem; border-right: 1px solid var(--surface-border); }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { padding: 0.75rem 1rem; color: var(--text-secondary); text-decoration: none; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; transition: var(--transition); }
+        .nav-item:hover, .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--accent-color); }
+        .admin-content { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .inline-input { width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid transparent; color: var(--text-primary); padding: 0.5rem; border-radius: 4px; transition: var(--transition); }
+        .inline-input:focus { border-color: var(--accent-color); outline: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar">
+            <h2 style="margin-bottom: 2rem; font-size: 1.25rem; color: var(--text-primary); padding-left: 1rem;">Admin Panel</h2>
+            <div class="sidebar-nav">
+                <a href="/new-bill" class="nav-item"><i data-feather="monitor"></i> POS Register</a>
+                <a href="/admin" class="nav-item"><i data-feather="home"></i> Dashboard</a>
+                <a href="/admin/products" class="nav-item active"><i data-feather="box"></i> Products</a>
+                <a href="/admin/settings" class="nav-item"><i data-feather="settings"></i> Settings</a>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center;">
+                <h1 style="font-size: 2rem;">Product Management</h1>
+                <button class="btn-primary" onclick="openNewProduct()">+ Add Product</button>
+            </div>
+            
+            <div class="glass-panel">
+                <table class="items-table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Price ($)</th>
+                            <th>Tax Category</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsBody">
+                        <!-- JS injected -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script th:src="@{/js/admin.js}"></script>
+    <script>
+        feather.replace();
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof loadProducts === 'function') loadProducts();
+        });
+    </script>
+</body>
+</html>

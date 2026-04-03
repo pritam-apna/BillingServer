@@ -31,6 +31,7 @@ public class InvoiceService {
         invoice.setCustomer(customer);
 
         BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal totalTax = BigDecimal.ZERO;
 
         for (InvoiceRequestDTO.Item reqItem : request.getItems()) {
             Product product = productRepository.findById(reqItem.getProductId())
@@ -38,6 +39,11 @@ public class InvoiceService {
             
             BigDecimal lineTotal = product.getPrice().multiply(new BigDecimal(reqItem.getQuantity()));
             subtotal = subtotal.add(lineTotal);
+
+            // Compute math
+            BigDecimal itemTaxRate = (product.getCategory() != null && product.getCategory().getTaxRate() != null) 
+                    ? product.getCategory().getTaxRate() : BigDecimal.ZERO;
+            totalTax = totalTax.add(lineTotal.multiply(itemTaxRate));
 
             InvoiceItem item = new InvoiceItem();
             item.setProduct(product);
@@ -48,10 +54,8 @@ public class InvoiceService {
         }
 
         invoice.setSubtotal(subtotal);
-        // Assuming a standard 10% tax for the MVP
-        BigDecimal tax = subtotal.multiply(new BigDecimal("0.10"));
-        invoice.setTax(tax);
-        invoice.setGrandTotal(subtotal.add(tax));
+        invoice.setTax(totalTax);
+        invoice.setGrandTotal(subtotal.add(totalTax));
 
         invoice = invoiceRepository.save(invoice);
         
@@ -62,6 +66,12 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
         return mapToResponseDTO(invoice);
+    }
+
+    public List<InvoiceResponseDTO> getAllInvoices() {
+        return invoiceRepository.findAll().stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
     }
 
     private InvoiceResponseDTO mapToResponseDTO(Invoice invoice) {
@@ -79,7 +89,10 @@ public class InvoiceService {
             dtoItem.setQuantity(item.getQuantity());
             dtoItem.setUnitPrice(item.getUnitPrice());
             dtoItem.setLineTotal(item.getLineTotal());
-            dtoItem.setProduct(new ProductDTO(item.getProduct().getId(), item.getProduct().getName(), item.getProduct().getPrice()));
+            Long cid = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getId() : null;
+            String cname = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getName() : null;
+            BigDecimal crate = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getTaxRate() : null;
+            dtoItem.setProduct(new ProductDTO(item.getProduct().getId(), item.getProduct().getName(), item.getProduct().getPrice(), cid, cname, crate));
             return dtoItem;
         }).collect(Collectors.toList());
         

@@ -334,3 +334,15 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: C:/Users/pritam 
 	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:291)
 	... 151 more
+2026-04-04 02:16:04.243375+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "122.0000 (7)"; SQL statement:
+update tax_categories set name=?,tax_rate=? where id=? [22001-240]
+2026-04-04 02:17:21.116578+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "10000.0000 (9)"; SQL statement:
+update tax_categories set name=?,tax_rate=? where id=? [22001-240]
+2026-04-04 02:17:52.389720+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "10.0000 (6)"; SQL statement:
+update tax_categories set name=?,tax_rate=? where id=? [22001-240]
+2026-04-04 02:17:58.896103+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "100.0000 (7)"; SQL statement:
+update tax_categories set name=?,tax_rate=? where id=? [22001-240]

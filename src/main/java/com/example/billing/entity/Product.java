@@ -17,11 +17,16 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "tax_category_id")
+    private TaxCategory category;
+
     public Product() {}
 
-    public Product(String name, BigDecimal price) {
+    public Product(String name, BigDecimal price, TaxCategory category) {
         this.name = name;
         this.price = price;
+        this.category = category;
     }
 
     public Long getId() { return id; }
@@ -32,6 +37,9 @@ public class Product {
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+
+    public TaxCategory getCategory() { return category; }
+    public void setCategory(TaxCategory category) { this.category = category; }
 
     @Override
     public boolean equals(Object o) {
