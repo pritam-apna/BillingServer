@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global State
     const state = {
         customerId: null,
-        items: [], // { uuid, productId, productName, price, quantity, lineTotal }
+        items: [], // { uuid, productId, productName, price, quantity, lineTotal, taxRate, lineTax }
     };
 
     let searchTimeout = null;
@@ -130,7 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         pdiv.innerHTML = `<strong>${p.name}</strong> <span style="float: right;">${formatter.format(p.price)}</span>`;
                         pdiv.addEventListener('click', () => {
                             item.productId = p.id; item.productName = p.name;
-                            item.price = p.price; item.lineTotal = item.price * item.quantity;
+                            item.price = p.price; item.quantity = 1;
+                            item.taxRate = p.taxRate || 0;
+                            item.lineTotal = item.price * item.quantity;
+                            item.lineTax = item.lineTotal * item.taxRate;
                             prodResults.classList.remove('active');
                             calculateTotals(); renderItems();
                         });
@@ -163,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isNaN(val) || val < 1) val = 1;
                 item.quantity = val;
                 item.lineTotal = item.price * item.quantity;
+                item.lineTax = item.lineTotal * item.taxRate;
                 calculateTotals();
                 tr.querySelector('.td-lt').textContent = formatter.format(item.lineTotal);
             });
@@ -196,12 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 3. Live Totals Math ---
     function calculateTotals() {
         let subtotal = 0;
-        state.items.forEach(i => subtotal += (i.lineTotal || 0));
-        const tax = subtotal * 0.10;
-        const grandTotal = subtotal + tax;
+        let totalTax = 0;
+        state.items.forEach(i => {
+            subtotal += (i.lineTotal || 0);
+            totalTax += (i.lineTax || 0);
+        });
+        const grandTotal = subtotal + totalTax;
 
         uiSubtotal.textContent = formatter.format(subtotal);
-        uiTax.textContent = formatter.format(tax);
+        uiTax.textContent = formatter.format(totalTax);
         uiGrandTotal.textContent = formatter.format(grandTotal);
     }
 
