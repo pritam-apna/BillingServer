@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Software</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <!-- Feather Icons for lightweight SVGs -->
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div id="app-container">
+        <header class="header">
+            <h1>Billing Software</h1>
+            <div class="user-status">
+                <span style="color: var(--text-secondary); font-size: 0.85rem;">Status: <span style="color: #4ade80">API Connected</span></span>
+            </div>
+        </header>
+        
+        <main>
+            <div class="billing-grid">
+                <!-- Left Side: Inputs -->
+                <div class="left-panel" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Customer Selection -->
+                    <div class="glass-panel">
+                        <div class="flex-between mb-4">
+                            <h2 style="font-size: 1.25rem;">1. Customer Details</h2>
+                        </div>
+                        <div class="form-group" id="customer-search-group">
+                            <label>Search Customer by Name or Phone</label>
+                            <input type="text" id="customerSearchInput" placeholder="Start typing..." autocomplete="off">
+                            <div class="autocomplete-results" id="customerResults"></div>
+                        </div>
+                        <div id="selectedCustomerInfo" style="display: none; padding: 1rem; border-radius: 8px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); margin-top: 1rem; flex-direction: row; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div id="selCustName" style="font-weight: 600;"></div>
+                                <div id="selCustPhone" style="font-size: 0.85rem; color: var(--text-secondary);"></div>
+                            </div>
+                            <button class="btn-icon" id="clearCustomerBtn" title="Clear"><i data-feather="x"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Product Lines -->
+                    <div class="glass-panel">
+                        <div class="flex-between mb-4">
+                            <h2 style="font-size: 1.25rem;">2. Items</h2>
+                            <button class="btn-primary" id="addLineBtn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">+ Add Line</button>
+                        </div>
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th style="width: 120px;">Price</th>
+                                    <th style="width: 80px;">Qty</th>
+                                    <th style="width: 120px;" class="text-right">Total</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceItemsBody">
+                                <!-- JS injected rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Side: Totals -->
+                <div class="right-panel">
+                    <div class="glass-panel totals-card" style="position: sticky; top: 2rem;">
+                        <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Summary</h2>
+                        <div class="total-row">
+                            <span>Subtotal</span>
+                            <span id="uiSubtotal">$0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Tax (10%)</span>
+                            <span id="uiTax">$0.00</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>Total</span>
+                            <span id="uiGrandTotal">$0.00</span>
+                        </div>
+                        <button class="btn-primary mt-4" id="saveInvoiceBtn" style="width: 100%;">Save Invoice</button>
+                        <div id="saveSuccessMsg" style="display: none; color: #4ade80; text-align: center; font-size: 0.9rem; margin-top: 0.5rem;">
+                            Invoice Saved successfully!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:src="@{/js/billing.js}"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
