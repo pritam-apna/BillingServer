@@ -31,6 +31,10 @@
                             <label>Search Customer by Name or Phone</label>
                             <input type="text" id="customerSearchInput" placeholder="Start typing..." autocomplete="off">
                             <div class="autocomplete-results" id="customerResults"></div>
+                            <div id="newCustomerFields" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                <input type="text" id="newCustomerPhone" placeholder="Phone (Optional)" style="flex: 1; font-size: 0.9rem;">
+                                <input type="email" id="newCustomerEmail" placeholder="Email (Optional)" style="flex: 1; font-size: 0.9rem;">
+                            </div>
                         </div>
                         <div id="selectedCustomerInfo" style="display: none; padding: 1rem; border-radius: 8px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); margin-top: 1rem; flex-direction: row; justify-content: space-between; align-items: center;">
                             <div>
