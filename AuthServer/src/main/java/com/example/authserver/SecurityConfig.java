@@ -74,9 +74,8 @@ public class SecurityConfig {
     // Creating our Global Single-Sign-On user: admin / password
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails userDetails = User.withDefaultPasswordEncoder()
-            .username("admin")
-            .password("password")
+        UserDetails userDetails = User.withUsername("admin")
+            .password("{noop}password")
             .roles("USER", "ADMIN")
             .build();
 
