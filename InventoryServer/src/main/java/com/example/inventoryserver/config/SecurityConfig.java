@@ -15,17 +15,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
-                // Allow H2 console for debugging
-                .requestMatchers("/h2-console/**").permitAll()
-                // All API endpoints require a valid JWT Bearer token
+                .requestMatchers("/h2-console/**", "/css/**", "/js/**", "/error").permitAll()
+                // API endpoints require JWT Bearer token
                 .requestMatchers("/api/**").hasAnyAuthority("SCOPE_inventory.read", "SCOPE_inventory.write")
+                // UI endpoints require login session
                 .anyRequest().authenticated()
             )
-            // Validate Bearer tokens against the AuthServer's JWK endpoint
+            .oauth2Login(login -> login
+                .defaultSuccessUrl("/", true)
+            )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))
-            // Allow H2 frames
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();

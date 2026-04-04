@@ -26,14 +26,32 @@ public class InventoryService {
     }
 
     @Transactional
-    public void adjustStock(Long productId, Integer change, String reference) {
+    public void adjustStock(Long productId, String itemName, Integer change, String reference) {
         InventoryItem item = inventoryItemRepository.findByProductId(productId)
-            .orElseGet(() -> new InventoryItem(productId, 0));
+            .orElseGet(() -> new InventoryItem(productId, itemName, 0));
+        
+        if (itemName != null && !itemName.isEmpty()) {
+            item.setItemName(itemName);
+        }
         
         item.setStockQuantity(item.getStockQuantity() + change);
         inventoryItemRepository.save(item);
 
         InventoryTransaction tx = new InventoryTransaction(productId, change, reference, LocalDateTime.now());
         inventoryTransactionRepository.save(tx);
+    }
+
+    // Overload for cases where name is unknown (e.g. deductions)
+    @Transactional
+    public void adjustStock(Long productId, Integer change, String reference) {
+        adjustStock(productId, null, change, reference);
+    }
+
+    public java.util.List<InventoryItem> findAllItems() {
+        return inventoryItemRepository.findAll();
+    }
+
+    public java.util.List<InventoryTransaction> findRecentTransactions() {
+        return inventoryTransactionRepository.findAll(); // Could add sorting/limit here
     }
 }

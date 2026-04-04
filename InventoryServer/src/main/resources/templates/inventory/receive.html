@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Receive Stock</title>
+    <link rel="stylesheet" th:href="@{/css/inventory.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Receive New Stock</h1>
+        <div class="glass-panel">
+            <form th:action="@{/receive}" method="post">
+                <div class="form-group">
+                    <label for="productId">Product ID (from Billing module)</label>
+                    <input type="number" id="productId" name="productId" required placeholder="e.g. 101">
+                </div>
+                <div class="form-group">
+                    <label for="itemName">Item Name / Description</label>
+                    <input type="text" id="itemName" name="itemName" required placeholder="e.g. Maggie 100g">
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity to Add</label>
+                    <input type="number" id="quantity" name="quantity" required placeholder="e.g. 1000">
+                </div>
+                <div class="form-group">
+                    <label for="reason">Reference (PO #, Batch, etc.)</label>
+                    <textarea id="reason" name="reason" rows="3" placeholder="e.g. Shipment from Mumbai Distribution center"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary">Save Stock Entry</button>
+                    <a th:href="@{/}" class="btn" style="background-color: var(--surface-border); border: 1px solid var(--surface-border); color: var(--text-secondary);">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
