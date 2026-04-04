@@ -214,7 +214,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 4. Remote Persistence ---
     saveInvoiceBtn.addEventListener('click', async () => {
-        if (!state.customerId) { alert('Please select a customer first.'); return; }
+        let finalCustomerId = state.customerId;
+
+        if (!finalCustomerId) {
+            const newCustomerName = custInput.value.trim();
+            if (!newCustomerName) {
+                alert('Please select a customer or type a new customer name.');
+                return;
+            }
+            
+            try {
+                // Auto-create the customer
+                const cRes = await fetch('/api/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newCustomerName, phone: '' })
+                });
+                if (!cRes.ok) throw new Error('Failed to create customer');
+                const createdCustomer = await cRes.json();
+                finalCustomerId = createdCustomer.id;
+                state.customerId = finalCustomerId; // Update state globally
+            } catch (err) {
+                alert('Failed to auto-create new customer.');
+                return;
+            }
+        }
         
         const validItems = state.items.filter(i => i.productId != null && i.quantity > 0);
         if (validItems.length === 0) { alert('Please add at least one valid product line.'); return; }
@@ -227,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    customerId: state.customerId,
+                    customerId: finalCustomerId,
                     items: validItems.map(i => ({ productId: i.productId, quantity: i.quantity }))
                 })
             });
