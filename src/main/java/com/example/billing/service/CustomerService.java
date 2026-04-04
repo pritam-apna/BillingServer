@@ -26,12 +26,12 @@ public class CustomerService {
     }
 
     public CustomerDTO create(CustomerDTO dto) {
-        Customer customer = new Customer(dto.getName(), dto.getPhone());
+        Customer customer = new Customer(dto.getName(), dto.getPhone(), dto.getEmail());
         customer = customerRepository.save(customer);
         return mapToDTO(customer);
     }
 
     private CustomerDTO mapToDTO(Customer customer) {
-        return new CustomerDTO(customer.getId(), customer.getName(), customer.getPhone());
+        return new CustomerDTO(customer.getId(), customer.getName(), customer.getPhone(), customer.getEmail());
     }
 }

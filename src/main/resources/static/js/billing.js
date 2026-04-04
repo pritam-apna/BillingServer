@@ -224,13 +224,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             try {
-                // Auto-create the customer
+                // Auto-create the customer with a placeholder phone number to avoid unique constraint violations
+                let inputPhone = document.getElementById('newCustomerPhone').value.trim();
+                let inputEmail = document.getElementById('newCustomerEmail').value.trim();
+                
+                const generatedPhone = inputPhone ? inputPhone : ('Auto-' + Math.floor(100000 + Math.random() * 900000));
+                
                 const cRes = await fetch('/api/customers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: newCustomerName, phone: '' })
+                    body: JSON.stringify({ name: newCustomerName, phone: generatedPhone, email: inputEmail || null })
                 });
-                if (!cRes.ok) throw new Error('Failed to create customer');
+                
+                if (!cRes.ok) {
+                    const errText = await cRes.text();
+                    console.error("Customer creation failed:", cRes.status, errText);
+                    throw new Error('Failed to create customer');
+                }
+                
                 const createdCustomer = await cRes.json();
                 finalCustomerId = createdCustomer.id;
                 state.customerId = finalCustomerId; // Update state globally
