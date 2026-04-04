@@ -33,8 +33,16 @@ public class SettingsService {
             return new BigDecimal("0.10");
         }
     }
-    
+
     public void setTaxRate(BigDecimal rate) {
         setSetting("TAX_RATE", rate.toString());
+    }
+
+    public boolean isInventoryEnabled() {
+        return "true".equalsIgnoreCase(getSetting("ENABLE_INVENTORY_MODULE", "false"));
+    }
+
+    public void setInventoryEnabled(boolean enabled) {
+        setSetting("ENABLE_INVENTORY_MODULE", String.valueOf(enabled));
     }
 }

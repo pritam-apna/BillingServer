@@ -15,11 +15,17 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
+    private final InventoryClientService inventoryClientService;
+    private final SettingsService settingsService;
 
-    public InvoiceService(InvoiceRepository invoiceRepository, CustomerRepository customerRepository, ProductRepository productRepository) {
+    public InvoiceService(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
+                          ProductRepository productRepository, InventoryClientService inventoryClientService,
+                          SettingsService settingsService) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
+        this.inventoryClientService = inventoryClientService;
+        this.settingsService = settingsService;
     }
 
     @Transactional
@@ -58,6 +64,17 @@ public class InvoiceService {
         invoice.setGrandTotal(subtotal.add(totalTax));
 
         invoice = invoiceRepository.save(invoice);
+        
+        // Only deduct from Inventory if the module is enabled by the shop owner.
+        // This keeps BillingServer fully independent when sold without InventoryServer.
+        if (settingsService.isInventoryEnabled()) {
+            List<java.util.Map<String, Object>> deductItems = request.getItems().stream()
+                .map(reqItem -> java.util.Map.<String, Object>of(
+                    "productId", reqItem.getProductId(),
+                    "quantity", reqItem.getQuantity()
+                )).collect(Collectors.toList());
+            inventoryClientService.deductStock(invoice.getId().toString(), deductItems);
+        }
         
         return mapToResponseDTO(invoice);
     }

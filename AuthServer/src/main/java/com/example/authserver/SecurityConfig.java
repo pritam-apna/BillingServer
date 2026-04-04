@@ -85,7 +85,9 @@ public class SecurityConfig {
     // Registering the remote BillingServer so it is legally permitted to request JWTs from us
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
-        RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
+
+        // 1. BillingServer UI client (Authorization Code Flow — for browser login)
+        RegisteredClient billingClient = RegisteredClient.withId(UUID.randomUUID().toString())
             .clientId("billing-client")
             .clientSecret("{noop}secret")
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
@@ -102,7 +104,34 @@ public class SecurityConfig {
             .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
             .build();
 
-        return new InMemoryRegisteredClientRepository(oidcClient);
+        // 2. BillingServer service account (Client Credentials Flow — for server-to-server calls to InventoryServer)
+        RegisteredClient billingService = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("billing-service")
+            .clientSecret("{noop}billing-service-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+            .scope("inventory.read")
+            .scope("inventory.write")
+            .build();
+
+        // 3. InventoryServer client (Authorization Code for future UI + Client Credentials for M2M)
+        RegisteredClient inventoryClient = RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId("inventory-client")
+            .clientSecret("{noop}inventory-secret")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .redirectUri("http://localhost:8082/login/oauth2/code/inventory-client-oidc")
+            .postLogoutRedirectUri("http://localhost:8082/")
+            .scope(OidcScopes.OPENID)
+            .scope(OidcScopes.PROFILE)
+            .scope("inventory.read")
+            .scope("inventory.write")
+            .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
+            .build();
+
+        return new InMemoryRegisteredClientRepository(billingClient, billingService, inventoryClient);
     }
 
     // Secure randomly rotating key logic for signing OIDC tokens

@@ -1,5 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Global State
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check if Inventory Module is enabled for this installation
+    let inventoryEnabled = false;
+    try {
+        const invSetting = await fetch('/api/admin/settings/inventory-module');
+        if (invSetting.ok) {
+            const data = await invSetting.json();
+            inventoryEnabled = data.enabled;
+        }
+    } catch (e) { /* InventoryServer not installed - safe to ignore */ }
+
     const state = {
         customerId: null,
         items: [], // { uuid, productId, productName, price, quantity, lineTotal, taxRate, lineTax }
@@ -123,11 +132,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 pSearchTimeout = setTimeout(async () => {
                     const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
                     const products = await res.json();
+                    
+                    // Only query the InventoryServer if the module is turned on
+                    if (inventoryEnabled) {
+                        await Promise.all(products.map(async p => {
+                            try {
+                                const invRes = await fetch(`http://localhost:8082/api/inventory/${p.id}`);
+                                if (invRes.ok) p.stock = (await invRes.json()).stockQuantity;
+                                else p.stock = null;
+                            } catch (e) { p.stock = null; }
+                        }));
+                    }
+                    
                     prodResults.innerHTML = '';
                     products.forEach(p => {
                         const pdiv = document.createElement('div');
                         pdiv.className = 'autocomplete-item';
-                        pdiv.innerHTML = `<strong>${p.name}</strong> <span style="float: right;">${formatter.format(p.price)}</span>`;
+                        const stockBadge = (inventoryEnabled && p.stock != null)
+                            ? `<span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: ${p.stock > 0 ? '#4ade80' : '#f87171'}; margin-left:8px;">Stock: ${p.stock}</span>`
+                            : '';
+                        pdiv.innerHTML = `<strong>${p.name}</strong>${stockBadge} <span style="float: right;">${formatter.format(p.price)}</span>`;
                         pdiv.addEventListener('click', () => {
                             item.productId = p.id; item.productName = p.name;
                             item.price = p.price; item.quantity = 1;

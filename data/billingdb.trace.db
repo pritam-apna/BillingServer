@@ -346,3 +346,15 @@ update tax_categories set name=?,tax_rate=? where id=? [22001-240]
 2026-04-04 02:17:58.896103+05:30 jdbc[3]: exception
 org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "100.0000 (7)"; SQL statement:
 update tax_categories set name=?,tax_rate=? where id=? [22001-240]
+2026-04-04 20:53:07.193748+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "100.0000 (7)"; SQL statement:
+insert into tax_categories (name,tax_rate,id) values (?,?,default) [22001-240]
+2026-04-04 20:54:06.790738+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "10.0000 (6)"; SQL statement:
+insert into tax_categories (name,tax_rate,id) values (?,?,default) [22001-240]
+2026-04-04 20:55:12.879038+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "111.0000 (7)"; SQL statement:
+insert into tax_categories (name,tax_rate,id) values (?,?,default) [22001-240]
+2026-04-04 21:04:09.642703+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "TAX_RATE NUMERIC(5, 4)": "12.0000 (6)"; SQL statement:
+insert into tax_categories (name,tax_rate,id) values (?,?,default) [22001-240]
