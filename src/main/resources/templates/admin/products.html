@@ -14,6 +14,22 @@
         .admin-content { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; }
         .inline-input { width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid transparent; color: var(--text-primary); padding: 0.5rem; border-radius: 4px; transition: var(--transition); }
         .inline-input:focus { border-color: var(--accent-color); outline: none; }
+
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--surface-color); border: 1px solid var(--surface-border); border-radius: 16px; padding: 2rem; width: 100%; max-width: 460px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: modalIn 0.2s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+        .modal h2 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+        .form-group label { font-size: 0.85rem; color: var(--text-secondary); }
+        .form-input { background: rgba(255,255,255,0.06); border: 1px solid var(--surface-border); color: var(--text-primary); padding: 0.7rem 1rem; border-radius: 8px; font-size: 0.95rem; width: 100%; transition: border-color 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--accent-color); }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+        .btn-secondary { padding: 0.6rem 1.4rem; border-radius: 8px; border: 1px solid var(--surface-border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+        .btn-secondary:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: #22c55e; color: white; padding: 0.9rem 1.5rem; border-radius: 10px; font-weight: 500; z-index: 9999; animation: fadeIn 0.3s ease; display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -32,7 +48,7 @@
         <main class="admin-content">
             <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; align-items: center;">
                 <h1 style="font-size: 2rem;">Product Management</h1>
-                <button class="btn-primary" onclick="openNewProduct()">+ Add Product</button>
+                <button class="btn-primary" id="addProductBtn">+ Add Product</button>
             </div>
             
             <div class="glass-panel">
@@ -43,7 +59,8 @@
                             <th>Name</th>
                             <th>Price ($)</th>
                             <th>Tax Category</th>
-                            <th style="width: 100px;">Actions</th>
+                            <th id="stockHeader" style="display:none;">Stock</th>
+                            <th style="width: 140px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="productsBody">
@@ -53,9 +70,58 @@
             </div>
         </main>
     </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal">
+            <h2>Add New Product</h2>
+            <div class="form-group">
+                <label for="newProductName">Product Name *</label>
+                <input type="text" id="newProductName" class="form-input" placeholder="e.g. Laptop Pro">
+            </div>
+            <div class="form-group">
+                <label for="newProductPrice">Price (USD) *</label>
+                <input type="number" id="newProductPrice" class="form-input" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label for="newProductCat">Tax Category</label>
+                <select id="newProductCat" class="form-input">
+                    <option value="">No Category</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitNewProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adjust Stock Modal -->
+    <div class="modal-overlay" id="stockModal">
+        <div class="modal">
+            <h2>Adjust Stock</h2>
+            <input type="hidden" id="stockProductId">
+            <div class="form-group">
+                <label for="stockChange">Quantity Change</label>
+                <input type="number" id="stockChange" class="form-input" placeholder="e.g. 50 to add, -5 to remove">
+            </div>
+            <div class="form-group">
+                <label for="stockReason">Reason</label>
+                <input type="text" id="stockReason" class="form-input" placeholder="e.g. New shipment, Damage, etc.">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeStockModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitStockAdjust()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
     <script th:src="@{/js/admin.js}"></script>
     <script>
         feather.replace();
+        document.getElementById('addProductBtn').addEventListener('click', openNewProduct);
         document.addEventListener('DOMContentLoaded', () => {
             if(typeof loadProducts === 'function') loadProducts();
         });

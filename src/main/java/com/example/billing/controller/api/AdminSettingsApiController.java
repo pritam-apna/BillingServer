@@ -24,8 +24,21 @@ public class AdminSettingsApiController {
 
     @PutMapping("/tax-rate")
     public ResponseEntity<Void> updateTaxRate(@RequestBody Map<String, BigDecimal> payload) {
-        if(payload.containsKey("rate")) {
+        if (payload.containsKey("rate")) {
             settingsService.setTaxRate(payload.get("rate"));
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/inventory-module")
+    public ResponseEntity<Map<String, Boolean>> getInventoryStatus() {
+        return ResponseEntity.ok(Map.of("enabled", settingsService.isInventoryEnabled()));
+    }
+
+    @PutMapping("/inventory-module")
+    public ResponseEntity<Void> updateInventoryStatus(@RequestBody Map<String, Boolean> payload) {
+        if (payload.containsKey("enabled")) {
+            settingsService.setInventoryEnabled(payload.get("enabled"));
         }
         return ResponseEntity.ok().build();
     }
