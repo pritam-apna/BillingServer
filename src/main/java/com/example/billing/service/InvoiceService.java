@@ -2,6 +2,7 @@ package com.example.billing.service;
 
 import com.example.billing.dto.*;
 import com.example.billing.entity.*;
+import com.example.billing.messaging.BillingEventPublisher;
 import com.example.billing.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class InvoiceService {
@@ -17,6 +20,9 @@ public class InvoiceService {
     private final ProductRepository productRepository;
     private final SettingsService settingsService;
     private final com.example.billing.messaging.BillingEventPublisher billingEventPublisher;
+
+    private static final Logger log = LoggerFactory.getLogger(InvoiceService.class);
+
 
     public InvoiceService(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
                           ProductRepository productRepository, SettingsService settingsService,
@@ -67,11 +73,15 @@ public class InvoiceService {
         
         // Publish SaleEvent via RabbitMQ for asynchronous stock deduction
         if (settingsService.isInventoryEnabled()) {
+            log.debug("Inventory is enabled");
+
             List<com.example.billing.messaging.BillingEventPublisher.SaleItem> deductItems = request.getItems().stream()
                 .map(reqItem -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
                     reqItem.getProductId(), reqItem.getQuantity()
                 )).collect(Collectors.toList());
+            log.debug("Billing Event is going to be published");
             billingEventPublisher.publishSale(invoice.getId(), deductItems);
+            log.debug("Billing Even is published done");
         }
         
         return mapToResponseDTO(invoice);
