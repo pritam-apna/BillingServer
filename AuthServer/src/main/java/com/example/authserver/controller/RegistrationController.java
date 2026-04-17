@@ -1,14 +1,9 @@
 package com.example.authserver.controller;
 
-import com.example.authserver.entity.User;
-import com.example.authserver.repository.UserRepository;
+import com.example.authserver.dto.ClientRequest;
+import com.example.authserver.dto.UserRequest;
+import com.example.authserver.service.RegistrationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -18,52 +13,33 @@ import java.util.UUID;
 @RequestMapping("/api/register")
 public class RegistrationController {
 
-    private final UserRepository userRepository;
-    private final RegisteredClientRepository registeredClientRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final RegistrationService registrationService;
 
-    public RegistrationController(UserRepository userRepository,
-                                  RegisteredClientRepository registeredClientRepository,
-                                  PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.registeredClientRepository = registeredClientRepository;
-        this.passwordEncoder = passwordEncoder;
+    public RegistrationController(RegistrationService registrationService) {
+        this.registrationService = registrationService;
     }
 
     @PostMapping("/user")
     public ResponseEntity<String> registerUser(@RequestBody UserRequest userRequest) {
-        if (userRepository.findByUsername(userRequest.username()).isPresent()) {
+        boolean success = registrationService.registerUser(userRequest);
+        if (!success) {
             return ResponseEntity.badRequest().body("Username already exists");
         }
-        User user = new User();
-        user.setUsername(userRequest.username());
-        user.setPassword(passwordEncoder.encode(userRequest.password()));
-        user.setRoles(Collections.singleton("USER"));
-        userRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
+    }
+
+    @PutMapping("/user/{id}")
+    public ResponseEntity<String> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
+        boolean success = registrationService.updateUser(id, userRequest);
+        if (!success) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok("User updated successfully");
     }
 
     @PostMapping("/client")
     public ResponseEntity<String> registerClient(@RequestBody ClientRequest clientRequest) {
-        RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId(clientRequest.clientId())
-                .clientSecret(passwordEncoder.encode(clientRequest.clientSecret()))
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri(clientRequest.redirectUri())
-                .postLogoutRedirectUri(clientRequest.postLogoutRedirectUri())
-                .scope("openid")
-                .scope("profile")
-                .scope(clientRequest.scope())
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-                .build();
-
-        registeredClientRepository.save(registeredClient);
+        registrationService.registerClient(clientRequest);
         return ResponseEntity.ok("Client registered successfully");
     }
-
-    public record UserRequest(String username, String password) {}
-    public record ClientRequest(String clientId, String clientSecret, String redirectUri, String postLogoutRedirectUri, String scope) {}
 }
