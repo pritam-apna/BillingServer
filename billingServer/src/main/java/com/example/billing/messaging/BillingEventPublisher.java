@@ -28,9 +28,9 @@ public class BillingEventPublisher {
         log.info("Publishing Sale Event for invoice #{}", invoiceId);
         SaleEvent event = new SaleEvent(invoiceId, items);
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, "sale.event", event);
-        log.debug("Billing event is sent{}",event);
+        log.debug("Billing event is sent: {}", event);
     }
 
     public record SaleEvent(Long invoiceId, List<SaleItem> items) {}
-    public record SaleItem(Long productId, Integer quantity) {}
+    public record SaleItem(Long productId, String productName, Integer quantity) {}
 }
