@@ -20,5 +20,14 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
-    - name: Build with Maven
+    - name: Build AuthServer
       run: mvn -B clean compile install
+      working-directory: AuthServer
+      
+    - name: Build InventoryServer
+      run: mvn -B clean compile install
+      working-directory: InventoryServer
+
+    - name: Build billingServer
+      run: mvn -B clean compile install
+      working-directory: billingServer
