@@ -16,7 +16,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/h2-console/**", "/css/**", "/js/**", "/error").permitAll()
+                .requestMatchers("/h2-console/**", "/css/**", "/js/**", "/error", "/debug/**").permitAll()
                 // API endpoints require JWT Bearer token
                 .requestMatchers("/api/**").hasAnyAuthority("SCOPE_inventory.read", "SCOPE_inventory.write")
                 // UI endpoints require login session

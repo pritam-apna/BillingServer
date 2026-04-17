@@ -6,5 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <include file="db/changelog/changes/001-schema.xml"/>
+    <include file="db/changelog/changes/002-data.xml"/>
+    <include file="db/changelog/changes/003-fix-names.xml"/>
 
 </databaseChangeLog>

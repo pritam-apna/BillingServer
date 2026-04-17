@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="4" author="system" runAlways="true">
+        <validCheckSum>ANY</validCheckSum>
+        <update tableName="inventory_items">
+            <column name="item_name" value="Laptop Pro"/>
+            <where>product_id = 1</where>
+        </update>
+        <update tableName="inventory_items">
+            <column name="item_name" value="Wireless Mouse"/>
+            <where>product_id = 2</where>
+        </update>
+        <update tableName="inventory_items">
+            <column name="item_name" value="Ergonomic Keyboard"/>
+            <where>product_id = 3</where>
+        </update>
+        <update tableName="inventory_items">
+            <column name="item_name" value="USB-C Hub"/>
+            <where>product_id = 4</where>
+        </update>
+        <update tableName="inventory_items">
+            <column name="item_name" value="HD Monitor 27&quot;"/>
+            <where>product_id = 5</where>
+        </update>
+
+        <!-- Fallback insertion for new environments -->
+        <sql>
+            INSERT INTO inventory_items (product_id, item_name, stock_quantity) VALUES (1, 'Laptop Pro', 100) ON CONFLICT (product_id) DO NOTHING;
+            INSERT INTO inventory_items (product_id, item_name, stock_quantity) VALUES (2, 'Wireless Mouse', 100) ON CONFLICT (product_id) DO NOTHING;
+            INSERT INTO inventory_items (product_id, item_name, stock_quantity) VALUES (3, 'Ergonomic Keyboard', 100) ON CONFLICT (product_id) DO NOTHING;
+            INSERT INTO inventory_items (product_id, item_name, stock_quantity) VALUES (4, 'USB-C Hub', 100) ON CONFLICT (product_id) DO NOTHING;
+            INSERT INTO inventory_items (product_id, item_name, stock_quantity) VALUES (5, 'HD Monitor 27"', 100) ON CONFLICT (product_id) DO NOTHING;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
