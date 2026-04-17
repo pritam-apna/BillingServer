@@ -45,9 +45,11 @@ public class RegistrationService {
         user.setUsername(userRequest.username());
         user.setPassword(passwordEncoder.encode(userRequest.password()));
         user.setRoles(Collections.singleton("USER"));
+        user.setEmail(userRequest.email());
+        user.setPhone(userRequest.phone());
         User savedUser = userRepository.save(user);
 
-        UserEvent event = new UserEvent(savedUser.getId(), savedUser.getUsername(), savedUser.getRoles(), "CREATED");
+        UserEvent event = new UserEvent(savedUser.getId(), savedUser.getUsername(), savedUser.getRoles(), savedUser.getEmail(), savedUser.getPhone(), "CREATED");
         authEventPublisher.publishUserCreated(event);
 
         return true;
@@ -68,7 +70,7 @@ public class RegistrationService {
 
         User updatedUser = userRepository.save(existingUser);
 
-        UserEvent event = new UserEvent(updatedUser.getId(), updatedUser.getUsername(), updatedUser.getRoles(), "UPDATED");
+        UserEvent event = new UserEvent(updatedUser.getId(), updatedUser.getUsername(), updatedUser.getRoles(),updatedUser.getEmail(),updatedUser.getPhone(), "UPDATED");
         authEventPublisher.publishUserUpdated(event);
 
         return true;

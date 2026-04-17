@@ -19,6 +19,16 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public org.springframework.amqp.core.Queue authQueue() {
+        return new org.springframework.amqp.core.Queue("auth_queue");
+    }
+
+    @Bean
+    public org.springframework.amqp.core.Binding bindingAuthQueue(org.springframework.amqp.core.Queue authQueue, TopicExchange authExchange) {
+        return org.springframework.amqp.core.BindingBuilder.bind(authQueue).to(authExchange).with("auth.user.#");
+    }
+
+    @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
     }

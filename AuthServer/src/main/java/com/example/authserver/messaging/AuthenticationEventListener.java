@@ -30,7 +30,7 @@ public class AuthenticationEventListener implements ApplicationListener<Authenti
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            UserEvent userEvent = new UserEvent(user.getId(), user.getUsername(), user.getRoles(), "LOGGED_IN");
+            UserEvent userEvent = new UserEvent(user.getId(), user.getUsername(), user.getRoles(),user.getPhone(), user.getEmail(), "LOGGED_IN");
             authEventPublisher.publishUserLoggedIn(userEvent);
             log.info("Successfully published login event for user: {}", username);
         } else {
