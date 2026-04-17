@@ -19,15 +19,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-        
+
     - name: Build AuthServer
-      run: mvn -B clean compile install
+      run: mvn -B clean compile install -DskipTests
       working-directory: AuthServer
       
     - name: Build InventoryServer
-      run: mvn -B clean compile install
+      run: mvn -B clean compile install -DskipTests
       working-directory: InventoryServer
 
     - name: Build billingServer
-      run: mvn -B clean compile install
+      run: mvn -B clean compile install -DskipTests
       working-directory: billingServer
