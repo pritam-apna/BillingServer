@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1" author="system">
+        <validCheckSum>ANY</validCheckSum>
+        <sql>
+            CREATE TABLE IF NOT EXISTS users (
+                id BIGSERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_roles (
+                user_id BIGINT NOT NULL,
+                role VARCHAR(255) NOT NULL,
+                CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS oauth2_registered_client (
+                id varchar(100) NOT NULL,
+                client_id varchar(100) NOT NULL,
+                client_id_issued_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                client_secret varchar(200) DEFAULT NULL,
+                client_secret_expires_at timestamp DEFAULT NULL,
+                client_name varchar(200) NOT NULL,
+                client_authentication_methods varchar(1000) NOT NULL,
+                authorization_grant_types varchar(1000) NOT NULL,
+                redirect_uris varchar(1000) DEFAULT NULL,
+                post_logout_redirect_uris varchar(1000) DEFAULT NULL,
+                scopes varchar(1000) NOT NULL,
+                client_settings varchar(4000) NOT NULL,
+                token_settings varchar(4000) NOT NULL,
+                PRIMARY KEY (id)
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

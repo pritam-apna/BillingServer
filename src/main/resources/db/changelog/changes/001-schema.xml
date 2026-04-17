@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1" author="system">
+        <validCheckSum>ANY</validCheckSum>
+        <sql>
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id BIGSERIAL PRIMARY KEY,
+                setting_key VARCHAR(255) UNIQUE NOT NULL,
+                setting_value VARCHAR(255) NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS customers (
+                id BIGSERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(255)
+            );
+
+            CREATE TABLE IF NOT EXISTS tax_categories (
+                id BIGSERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                tax_rate DECIMAL(5,4) NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS products (
+                id BIGSERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                price DECIMAL(10,2) NOT NULL,
+                tax_category_id BIGINT,
+                CONSTRAINT fk_products_tax FOREIGN KEY (tax_category_id) REFERENCES tax_categories (id) ON DELETE SET NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS invoices (
+                id BIGSERIAL PRIMARY KEY,
+                customer_id BIGINT NOT NULL,
+                subtotal DECIMAL(10,2) NOT NULL,
+                tax DECIMAL(10,2) NOT NULL,
+                grand_total DECIMAL(10,2) NOT NULL,
+                date_created TIMESTAMP NOT NULL,
+                CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS invoice_items (
+                id BIGSERIAL PRIMARY KEY,
+                invoice_id BIGINT NOT NULL,
+                product_id BIGINT NOT NULL,
+                quantity INTEGER NOT NULL,
+                unit_price DECIMAL(10,2) NOT NULL,
+                line_total DECIMAL(10,2) NOT NULL,
+                CONSTRAINT fk_invoice_items_invoice FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE,
+                CONSTRAINT fk_invoice_items_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

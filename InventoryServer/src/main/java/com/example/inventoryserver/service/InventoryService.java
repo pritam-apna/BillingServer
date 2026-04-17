@@ -4,6 +4,7 @@ import com.example.inventoryserver.entity.InventoryItem;
 import com.example.inventoryserver.entity.InventoryTransaction;
 import com.example.inventoryserver.repository.InventoryItemRepository;
 import com.example.inventoryserver.repository.InventoryTransactionRepository;
+import com.example.inventoryserver.messaging.InventoryEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -13,10 +14,14 @@ public class InventoryService {
     
     private final InventoryItemRepository inventoryItemRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final InventoryEventPublisher inventoryEventPublisher;
 
-    public InventoryService(InventoryItemRepository itemRepo, InventoryTransactionRepository transRepo) {
+    public InventoryService(InventoryItemRepository itemRepo, 
+                            InventoryTransactionRepository transRepo,
+                            InventoryEventPublisher inventoryEventPublisher) {
         this.inventoryItemRepository = itemRepo;
         this.inventoryTransactionRepository = transRepo;
+        this.inventoryEventPublisher = inventoryEventPublisher;
     }
 
     public Integer getStock(Long productId) {
@@ -27,8 +32,13 @@ public class InventoryService {
 
     @Transactional
     public void adjustStock(Long productId, String itemName, Integer change, String reference) {
-        InventoryItem item = inventoryItemRepository.findByProductId(productId)
-            .orElseGet(() -> new InventoryItem(productId, itemName, 0));
+        boolean isNew = false;
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElse(null);
+        
+        if (item == null) {
+            item = new InventoryItem(productId, itemName, 0);
+            isNew = true;
+        }
         
         if (itemName != null && !itemName.isEmpty()) {
             item.setItemName(itemName);
@@ -39,6 +49,10 @@ public class InventoryService {
 
         InventoryTransaction tx = new InventoryTransaction(productId, change, reference, LocalDateTime.now());
         inventoryTransactionRepository.save(tx);
+
+        if (isNew && itemName != null && !itemName.isEmpty()) {
+            inventoryEventPublisher.publishProductCreated(productId, itemName);
+        }
     }
 
     // Overload for cases where name is unknown (e.g. deductions)
@@ -52,6 +66,6 @@ public class InventoryService {
     }
 
     public java.util.List<InventoryTransaction> findRecentTransactions() {
-        return inventoryTransactionRepository.findAll(); // Could add sorting/limit here
+        return inventoryTransactionRepository.findTop10ByOrderByTimestampDesc();
     }
 }

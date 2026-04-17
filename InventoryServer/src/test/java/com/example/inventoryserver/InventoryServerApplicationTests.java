@@ -9,6 +9,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest
 class InventoryServerApplicationTests {
 
+    @org.junit.jupiter.api.BeforeAll
+    static void setup() {
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+    }
+
     @MockitoBean
     JwtDecoder jwtDecoder;
 

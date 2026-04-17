@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1" author="system">
+        <validCheckSum>ANY</validCheckSum>
+        <sql>
+            CREATE TABLE IF NOT EXISTS inventory_items (
+                id BIGSERIAL PRIMARY KEY,
+                product_id BIGINT UNIQUE NOT NULL,
+                item_name VARCHAR(255),
+                stock_quantity INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS inventory_transactions (
+                id BIGSERIAL PRIMARY KEY,
+                product_id BIGINT NOT NULL,
+                quantity_change INTEGER NOT NULL,
+                reference_id VARCHAR(255) NOT NULL,
+                timestamp TIMESTAMP NOT NULL
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -8,24 +8,18 @@ import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.oidc.OidcScopes;
-import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -64,75 +58,25 @@ public class SecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/register/**").permitAll() // Allow registration endpoints
                 .anyRequest().authenticated()
             )
-            .formLogin(Customizer.withDefaults());
+            .formLogin(Customizer.withDefaults())
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/register/**")); // Disable CSRF for registration endpoints temporarily for ease of use
 
         return http.build();
     }
 
-    // Creating our Global Single-Sign-On user: admin / password
+    // Bean for Password Encoding
     @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails userDetails = User.withUsername("admin")
-            .password("{noop}password")
-            .roles("USER", "ADMIN")
-            .build();
-
-        return new InMemoryUserDetailsManager(userDetails);
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    // Registering the remote BillingServer so it is legally permitted to request JWTs from us
+    // Use JDBC for Registered Clients seamlessly
     @Bean
-    public RegisteredClientRepository registeredClientRepository() {
-
-        // 1. BillingServer UI client (Authorization Code Flow — for browser login)
-        RegisteredClient billingClient = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("billing-client")
-            .clientSecret("{noop}secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
-            .redirectUri("http://localhost:8080/login/oauth2/code/messaging-client-oidc")
-            .postLogoutRedirectUri("http://127.0.0.1:8080/")
-            .postLogoutRedirectUri("http://localhost:8080/")
-            .scope(OidcScopes.OPENID)
-            .scope(OidcScopes.PROFILE)
-            .scope("billing.read")
-            .scope("billing.write")
-            .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-            .build();
-
-        // 2. BillingServer service account (Client Credentials Flow — for server-to-server calls to InventoryServer)
-        RegisteredClient billingService = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("billing-service")
-            .clientSecret("{noop}billing-service-secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-            .scope("inventory.read")
-            .scope("inventory.write")
-            .build();
-
-        // 3. InventoryServer client (Authorization Code for future UI + Client Credentials for M2M)
-        RegisteredClient inventoryClient = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("inventory-client")
-            .clientSecret("{noop}inventory-secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://localhost:8082/login/oauth2/code/inventory-client")
-            .postLogoutRedirectUri("http://localhost:8082/")
-            .scope(OidcScopes.OPENID)
-            .scope(OidcScopes.PROFILE)
-            .scope(OidcScopes.EMAIL)
-            .scope("inventory.read")
-            .scope("inventory.write")
-            .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
-            .build();
-
-        return new InMemoryRegisteredClientRepository(billingClient, billingService, inventoryClient);
+    public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
+        return new JdbcRegisteredClientRepository(jdbcTemplate);
     }
 
     // Secure randomly rotating key logic for signing OIDC tokens

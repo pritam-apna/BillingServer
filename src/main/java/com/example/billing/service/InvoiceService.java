@@ -15,17 +15,17 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
-    private final InventoryClientService inventoryClientService;
     private final SettingsService settingsService;
+    private final com.example.billing.messaging.BillingEventPublisher billingEventPublisher;
 
     public InvoiceService(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
-                          ProductRepository productRepository, InventoryClientService inventoryClientService,
-                          SettingsService settingsService) {
+                          ProductRepository productRepository, SettingsService settingsService,
+                          com.example.billing.messaging.BillingEventPublisher billingEventPublisher) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
-        this.inventoryClientService = inventoryClientService;
         this.settingsService = settingsService;
+        this.billingEventPublisher = billingEventPublisher;
     }
 
     @Transactional
@@ -65,15 +65,13 @@ public class InvoiceService {
 
         invoice = invoiceRepository.save(invoice);
         
-        // Only deduct from Inventory if the module is enabled by the shop owner.
-        // This keeps BillingServer fully independent when sold without InventoryServer.
+        // Publish SaleEvent via RabbitMQ for asynchronous stock deduction
         if (settingsService.isInventoryEnabled()) {
-            List<java.util.Map<String, Object>> deductItems = request.getItems().stream()
-                .map(reqItem -> java.util.Map.<String, Object>of(
-                    "productId", reqItem.getProductId(),
-                    "quantity", reqItem.getQuantity()
+            List<com.example.billing.messaging.BillingEventPublisher.SaleItem> deductItems = request.getItems().stream()
+                .map(reqItem -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
+                    reqItem.getProductId(), reqItem.getQuantity()
                 )).collect(Collectors.toList());
-            inventoryClientService.deductStock(invoice.getId().toString(), deductItems);
+            billingEventPublisher.publishSale(invoice.getId(), deductItems);
         }
         
         return mapToResponseDTO(invoice);
