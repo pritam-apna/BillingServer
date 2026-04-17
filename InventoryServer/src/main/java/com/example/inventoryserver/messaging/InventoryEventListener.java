@@ -29,17 +29,20 @@ public class InventoryEventListener {
             return;
         }
         log.info("Received Sale Event for invoice #{}", event.invoiceId());
-        
+
         for (SaleItem item : event.items()) {
             inventoryService.adjustStock(
-                item.productId(),
-                -Math.abs(item.quantity()),
-                "Invoice #" + event.invoiceId()
-            );
+                    item.productId(),
+                    item.productName(),
+                    -Math.abs(item.quantity()),
+                    "Invoice #" + event.invoiceId());
         }
         log.info("Successfully processed stock adjustments for invoice #{}", event.invoiceId());
     }
 
-    public record SaleEvent(Long invoiceId, List<SaleItem> items) {}
-    public record SaleItem(Long productId, Integer quantity) {}
+    public record SaleEvent(Long invoiceId, List<SaleItem> items) {
+    }
+
+    public record SaleItem(Long productId, String productName, Integer quantity) {
+    }
 }

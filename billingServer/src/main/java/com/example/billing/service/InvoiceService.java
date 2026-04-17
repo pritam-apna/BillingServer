@@ -73,15 +73,16 @@ public class InvoiceService {
         
         // Publish SaleEvent via RabbitMQ for asynchronous stock deduction
         if (settingsService.isInventoryEnabled()) {
-            log.debug("Inventory is enabled");
+            log.debug("Inventory integration is enabled. Preparing SaleEvent for invoice #{}", invoice.getId());
 
-            List<com.example.billing.messaging.BillingEventPublisher.SaleItem> deductItems = request.getItems().stream()
-                .map(reqItem -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
-                    reqItem.getProductId(), reqItem.getQuantity()
+            List<com.example.billing.messaging.BillingEventPublisher.SaleItem> deductItems = invoice.getItems().stream()
+                .map(item -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
+                    item.getProduct().getId(),
+                    item.getProduct().getName(),
+                    item.getQuantity()
                 )).collect(Collectors.toList());
-            log.debug("Billing Event is going to be published");
+            
             billingEventPublisher.publishSale(invoice.getId(), deductItems);
-            log.debug("Billing Even is published done");
         }
         
         return mapToResponseDTO(invoice);
