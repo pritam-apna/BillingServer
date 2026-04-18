@@ -58,11 +58,11 @@ public class SecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/register/**").permitAll() // Allow registration endpoints
+                .requestMatchers("/api/register/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Allow registration and swagger endpoints
                 .anyRequest().authenticated()
             )
             .formLogin(Customizer.withDefaults())
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/register/**")); // Disable CSRF for registration endpoints temporarily for ease of use
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/register/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")); // Disable CSRF for registration and swagger endpoints
 
         return http.build();
     }
