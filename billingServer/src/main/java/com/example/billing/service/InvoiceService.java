@@ -4,6 +4,7 @@ import com.example.billing.dto.*;
 import com.example.billing.entity.*;
 import com.example.billing.messaging.BillingEventPublisher;
 import com.example.billing.repository.*;
+import com.example.billing.client.InventoryServiceClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +21,20 @@ public class InvoiceService {
     private final ProductRepository productRepository;
     private final SettingsService settingsService;
     private final com.example.billing.messaging.BillingEventPublisher billingEventPublisher;
+    private final InventoryServiceClient inventoryServiceClient;
 
     private static final Logger log = LoggerFactory.getLogger(InvoiceService.class);
 
-
     public InvoiceService(InvoiceRepository invoiceRepository, CustomerRepository customerRepository,
-                          ProductRepository productRepository, SettingsService settingsService,
-                          com.example.billing.messaging.BillingEventPublisher billingEventPublisher) {
+            ProductRepository productRepository, SettingsService settingsService,
+            com.example.billing.messaging.BillingEventPublisher billingEventPublisher,
+            InventoryServiceClient inventoryServiceClient) {
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
         this.settingsService = settingsService;
         this.billingEventPublisher = billingEventPublisher;
+        this.inventoryServiceClient = inventoryServiceClient;
     }
 
     @Transactional
@@ -48,13 +51,14 @@ public class InvoiceService {
         for (InvoiceRequestDTO.Item reqItem : request.getItems()) {
             Product product = productRepository.findById(reqItem.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found: " + reqItem.getProductId()));
-            
+
             BigDecimal lineTotal = product.getPrice().multiply(new BigDecimal(reqItem.getQuantity()));
             subtotal = subtotal.add(lineTotal);
 
             // Compute math
-            BigDecimal itemTaxRate = (product.getCategory() != null && product.getCategory().getTaxRate() != null) 
-                    ? product.getCategory().getTaxRate() : BigDecimal.ZERO;
+            BigDecimal itemTaxRate = (product.getCategory() != null && product.getCategory().getTaxRate() != null)
+                    ? product.getCategory().getTaxRate()
+                    : BigDecimal.ZERO;
             totalTax = totalTax.add(lineTotal.multiply(itemTaxRate));
 
             InvoiceItem item = new InvoiceItem();
@@ -70,24 +74,38 @@ public class InvoiceService {
         invoice.setGrandTotal(subtotal.add(totalTax));
 
         invoice = invoiceRepository.save(invoice);
-        
+
         // Publish SaleEvent via RabbitMQ for asynchronous stock deduction
         if (settingsService.isInventoryEnabled()) {
             log.debug("Inventory integration is enabled. Preparing SaleEvent for invoice #{}", invoice.getId());
 
             List<com.example.billing.messaging.BillingEventPublisher.SaleItem> deductItems = invoice.getItems().stream()
-                .map(item -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
-                    item.getProduct().getId(),
-                    item.getProduct().getName(),
-                    item.getQuantity()
-                )).collect(Collectors.toList());
-            
+                    .map(item -> new com.example.billing.messaging.BillingEventPublisher.SaleItem(
+                            item.getProduct().getId(),
+                            item.getProduct().getName(),
+                            item.getQuantity()))
+                    .collect(Collectors.toList());
+
             billingEventPublisher.publishSale(invoice.getId(), deductItems);
+
+            // Direct API call via Client Credentials
+            List<InventoryServiceClient.InventoryItem> apiItems = invoice.getItems().stream()
+                    .map(item -> new InventoryServiceClient.InventoryItem(item.getProduct().getId(),
+                            item.getQuantity()))
+                    .collect(Collectors.toList());
+
+            try {
+                inventoryServiceClient.deductStock(invoice.getId(), apiItems).block();
+                log.info("Successfully deducted stock via direct API for invoice #{}", invoice.getId());
+            } catch (Exception e) {
+                log.error("Failed to deduct stock via direct API for invoice #{}: {}", invoice.getId(), e.getMessage());
+                // In a production app, you might want to retry or rely solely on RabbitMQ
+            }
         }
-        
+
         return mapToResponseDTO(invoice);
     }
-    
+
     public InvoiceResponseDTO getInvoice(Long id) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
@@ -107,8 +125,9 @@ public class InvoiceService {
         dto.setTax(invoice.getTax());
         dto.setGrandTotal(invoice.getGrandTotal());
         dto.setDateCreated(invoice.getDateCreated());
-        dto.setCustomer(new CustomerDTO(invoice.getCustomer().getId(), invoice.getCustomer().getName(), invoice.getCustomer().getPhone()));
-        
+        dto.setCustomer(new CustomerDTO(invoice.getCustomer().getId(), invoice.getCustomer().getName(),
+                invoice.getCustomer().getPhone()));
+
         List<InvoiceResponseDTO.Item> items = invoice.getItems().stream().map(item -> {
             InvoiceResponseDTO.Item dtoItem = new InvoiceResponseDTO.Item();
             dtoItem.setId(item.getId());
@@ -117,11 +136,13 @@ public class InvoiceService {
             dtoItem.setLineTotal(item.getLineTotal());
             Long cid = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getId() : null;
             String cname = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getName() : null;
-            BigDecimal crate = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getTaxRate() : null;
-            dtoItem.setProduct(new ProductDTO(item.getProduct().getId(), item.getProduct().getName(), item.getProduct().getPrice(), cid, cname, crate));
+            BigDecimal crate = item.getProduct().getCategory() != null ? item.getProduct().getCategory().getTaxRate()
+                    : null;
+            dtoItem.setProduct(new ProductDTO(item.getProduct().getId(), item.getProduct().getName(),
+                    item.getProduct().getPrice(), cid, cname, crate));
             return dtoItem;
         }).collect(Collectors.toList());
-        
+
         dto.setItems(items);
         return dto;
     }

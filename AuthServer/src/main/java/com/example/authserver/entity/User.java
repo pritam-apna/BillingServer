@@ -29,5 +29,10 @@ public class User {
     @Column(name = "role")
     private Set<String> roles;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_authorized_clients", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "client_id")
+    private Set<String> authorizedClientIds;
+
 
 }

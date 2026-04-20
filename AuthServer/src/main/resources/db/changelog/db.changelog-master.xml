@@ -7,5 +7,6 @@
 
     <include file="db/changelog/changes/001-schema.xml"/>
     <include file="db/changelog/changes/002-data.xml"/>
+    <include file="db/changelog/changes/003-client-associations.xml"/>
 
 </databaseChangeLog>
