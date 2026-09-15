@@ -23,6 +23,9 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import com.example.authserver.security.ClientAuthorizationValidator;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationProvider;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -36,10 +39,27 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-            .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http, 
+                                                                     ClientAuthorizationValidator clientAuthorizationValidator) throws Exception {
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+                OAuth2AuthorizationServerConfigurer.authorizationServer();
+
+        http
+            .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+            .with(authorizationServerConfigurer, (authorizationServer) ->
+                authorizationServer
+                    .authorizationEndpoint(authorizationEndpoint ->
+                        authorizationEndpoint.authenticationProviders(providers -> 
+                            providers.forEach(provider -> {
+                                if (provider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider) {
+                                    ((OAuth2AuthorizationCodeRequestAuthenticationProvider) provider)
+                                        .setAuthenticationValidator(clientAuthorizationValidator);
+                                }
+                            })
+                        )
+                    )
+                    .oidc(Customizer.withDefaults())
+            );
 
         http
             .exceptionHandling(exceptions -> exceptions

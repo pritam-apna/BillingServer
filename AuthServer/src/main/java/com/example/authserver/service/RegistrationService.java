@@ -47,6 +47,7 @@ public class RegistrationService {
         user.setRoles(Collections.singleton("USER"));
         user.setEmail(userRequest.email());
         user.setPhone(userRequest.phone());
+        user.setAuthorizedClientIds(userRequest.authorizedClientIds());
         User savedUser = userRepository.save(user);
 
         UserEvent event = new UserEvent(savedUser.getId(), savedUser.getUsername(), savedUser.getRoles(), savedUser.getEmail(), savedUser.getPhone(), "CREATED");
@@ -66,6 +67,10 @@ public class RegistrationService {
         
         if (userRequest.password() != null && !userRequest.password().trim().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(userRequest.password()));
+        }
+
+        if (userRequest.authorizedClientIds() != null) {
+            existingUser.setAuthorizedClientIds(userRequest.authorizedClientIds());
         }
 
         User updatedUser = userRepository.save(existingUser);
